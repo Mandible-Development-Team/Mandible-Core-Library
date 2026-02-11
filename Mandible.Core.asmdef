@@ -14,9 +14,9 @@
     "defineConstraints": [],
     "versionDefines": [
         {
-            "name": "com.mandible.generic",
+            "name": "com.mandible.core",
             "expression": "0.0.0",
-            "define": "MANDIBLE_GENERIC_LIBRARY"
+            "define": "MANDIBLE_CORE_LIBRARY"
         }
     ],
     "noEngineReferences": false
