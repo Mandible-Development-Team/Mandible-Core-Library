@@ -1,27 +1,27 @@
 using UnityEngine;
 
-public class InputManager : MonoBehaviour
+public class CursorModeManager
 {
-    public enum InputMode { Gameplay, UI }
+    public enum CursorMode { Gameplay, UI }
 
     [Header("Cursor")]
-    [SerializeField] InputMode inputMode;
+    [SerializeField] CursorMode cursorMode;
 
     //Cursor
     void Start()
     {
-        SetMode(inputMode);
+        SetMode(cursorMode);
     }
 
-    public void SetMode(InputMode mode)
+    public void SetMode(CursorMode mode)
     {
         switch (mode)
         {
-            case InputMode.Gameplay:
+            case CursorMode.Gameplay:
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
                 break;
-            case InputMode.UI:
+            case CursorMode.UI:
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
                 break;
