@@ -60,6 +60,14 @@ namespace Mandible.Core.Data.Editor
             _fieldInfo = fieldInfo;
             ListProperty = property.FindPropertyRelative(SerializedDictionaryDrawer.SerializedListName);
 
+            if (ListProperty == null)
+            {
+                Debug.LogError(
+                    $"Could not find serialized list for {property.propertyPath}. " +
+                    $"Property type: {property.type}");
+                return;
+            }
+
             _keyValueStyle = new GUIStyle(EditorStyles.toolbarButton);
             _keyValueStyle.padding = new RectOffset(0, 0, 0, 0);
             _keyValueStyle.border = new RectOffset(0, 0, 0, 0);
@@ -603,11 +611,42 @@ namespace Mandible.Core.Data.Editor
             }
         }
 
+        private float GetDisplayHeight(SerializedProperty property, DisplayType displayType)
+{
+    if (property == null)
+        return EditorGUIUtility.singleLineHeight;
+
+    if (displayType != DisplayType.List)
+        return EditorGUI.GetPropertyHeight(property, GUIContent.none, true);
+
+    float height = 0f;
+
+    foreach (SerializedProperty child in SCEditorUtility.GetChildren(property.Copy()))
+    {
+        height += EditorGUI.GetPropertyHeight(child, GUIContent.none, true);
+        height += EditorGUIUtility.standardVerticalSpacing;
+    }
+
+    return Mathf.Max(EditorGUIUtility.singleLineHeight, height);
+}
+
         private float OnGetElementHeight(int index)
         {
             int actualIndex = _pagedIndices[index];
-            var element = _activeState.GetPropertyAtIndex(actualIndex);
-            return CalculateHeightOfElement(element, _propertyData.GetElementData(SerializedDictionaryDrawer.KeyFlag).EffectiveDisplayType == DisplayType.List, _propertyData.GetElementData(SerializedDictionaryDrawer.ValueFlag).EffectiveDisplayType == DisplayType.List);
+            SerializedProperty element = _activeState.GetPropertyAtIndex(actualIndex);
+
+            SerializedProperty key = element.FindPropertyRelative(SerializedDictionaryDrawer.KeyName);
+            SerializedProperty value = element.FindPropertyRelative(SerializedDictionaryDrawer.ValueName);
+
+            float keyHeight = GetDisplayHeight(
+                key,
+                _propertyData.GetElementData(SerializedDictionaryDrawer.KeyFlag).EffectiveDisplayType);
+
+            float valueHeight = GetDisplayHeight(
+                value,
+                _propertyData.GetElementData(SerializedDictionaryDrawer.ValueFlag).EffectiveDisplayType);
+
+            return Mathf.Max(keyHeight, valueHeight) + EditorGUIUtility.standardVerticalSpacing;
         }
 
         private void OnDrawElement(Rect rect, int index, bool isActive, bool isFocused)
@@ -626,7 +665,7 @@ namespace Mandible.Core.Data.Editor
 
             var keyProperty = kvp.FindPropertyRelative(SerializedDictionaryDrawer.KeyName);
             var valueProperty = kvp.FindPropertyRelative(SerializedDictionaryDrawer.ValueName);
-
+            
             Color prevColor = GUI.color;
             if (_singleEditingData.IsValid)
             {
@@ -654,21 +693,13 @@ namespace Mandible.Core.Data.Editor
 
         private void DrawGroupedElement(Rect rect, int spaceForProperty, SerializedProperty property, DisplayType displayType)
         {
-            if(property == null || _activeState == null) return;
+            if (property == null || _activeState == null)
+                return;
 
-            using (new LabelWidth(rect.width * 0.4f))
-            {
-                float height = SCEditorUtility.CalculateHeight(property.Copy(), displayType);
-                Rect groupRect = rect.CutLeft(-spaceForProperty).WithHeight(height);
-                GUI.BeginGroup(groupRect);
+            rect.x += spaceForProperty;
+            rect.width -= spaceForProperty;
 
-                Rect elementRect = new Rect(spaceForProperty, 0, rect.width, height);
-                _activeState.DrawElement(elementRect, property, displayType);
-
-                DrawInvisibleProperty(rect.WithWidth(spaceForProperty), property);
-
-                GUI.EndGroup();
-            }
+            _activeState.DrawElement(rect, property, displayType);
         }
 
         internal static void DrawInvisibleProperty(Rect rect, SerializedProperty property)
